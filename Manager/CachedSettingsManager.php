@@ -53,6 +53,7 @@ class CachedSettingsManager implements SettingsManagerInterface
             return $cached;
         }
 
+        $this->settingsManager->clearSettings($owner);
         $value = $this->settingsManager->get($name, $owner, $default);
         $this->storeInCache($name, $value, $owner);
 
@@ -68,6 +69,7 @@ class CachedSettingsManager implements SettingsManagerInterface
             return $cached;
         }
 
+        $this->settingsManager->clearSettings($owner);
         $value = $this->settingsManager->all($owner);
         $this->storeInCache(null, $value, $owner);
 
@@ -110,8 +112,8 @@ class CachedSettingsManager implements SettingsManagerInterface
     }
 
     /**
-     * @param SettingsOwnerInterface $owner
      * @param string $name
+     * @param SettingsOwnerInterface $owner
      *
      * @return bool TRUE if the cache entry was successfully deleted, FALSE otherwise.
      */
@@ -123,8 +125,8 @@ class CachedSettingsManager implements SettingsManagerInterface
     /**
      * Get from cache.
      *
-     * @param SettingsOwnerInterface $owner
      * @param string $name
+     * @param SettingsOwnerInterface $owner
      *
      * @return mixed|null if nothing was found in cache
      */
@@ -138,9 +140,9 @@ class CachedSettingsManager implements SettingsManagerInterface
     /**
      * Store in cache.
      *
-     * @param SettingsOwnerInterface $owner
      * @param string $name
      * @param mixed $value
+     * @param SettingsOwnerInterface $owner
      *
      * @return bool TRUE if the entry was successfully stored in the cache, FALSE otherwise.
      */

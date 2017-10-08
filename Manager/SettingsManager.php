@@ -190,10 +190,10 @@ class SettingsManager implements SettingsManagerInterface
         $names = (array)$names;
 
         $settings = $this->repository->findBy(
-            array(
-                'name' => $names,
-                'ownerId' => $owner === null ? null : $owner->getSettingIdentifier(),
-            )
+                array(
+                    'name' => $names,
+                    'ownerId' => $owner === null ? null : $owner->getSettingIdentifier(),
+                )
         );
 
         // Assert: $settings might be a smaller set than $names
@@ -289,7 +289,7 @@ class SettingsManager implements SettingsManagerInterface
 
         // User settings
         if ($owner !== null && ($this->ownerSettings === null || !array_key_exists(
-                    $owner->getSettingIdentifier(),
+                    $owner->getSettingIdentifier(), 
                     $this->ownerSettings
                 ))
         ) {
@@ -323,13 +323,28 @@ class SettingsManager implements SettingsManagerInterface
 
         /** @var Setting $setting */
         foreach ($this->repository->findBy(
-            array('ownerId' => $owner === null ? null : $owner->getSettingIdentifier())
+                array('ownerId' => $owner === null ? null : $owner->getSettingIdentifier())
         ) as $setting) {
             if (array_key_exists($setting->getName(), $settings)) {
                 $settings[$setting->getName()] = $this->serializer->unserialize($setting->getValue());
             }
+            $this->em->detach($setting);
         }
 
         return $settings;
     }
+    
+    /**
+     * Clear the local cache of settings to force rereading from the database
+     * {@inheritdoc}
+     */
+    public function clearSettings($owner) {
+        $this->globalSettings = null;
+
+        if ($owner !== null && 
+                array_key_exists($owner->getSettingIdentifier(), $this->ownerSettings)) {
+                    unset($this->ownerSettings[$owner->getSettingIdentifier()]);
+                }
+    }
+
 }
