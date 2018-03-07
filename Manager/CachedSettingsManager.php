@@ -165,4 +165,29 @@ class CachedSettingsManager implements SettingsManagerInterface
     {
         return sprintf(self::PREFIX, $owner ? $owner->getSettingIdentifier() : '', $key);
     }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function findNamesValuesBegin($begins, $owner = null)
+    {
+        return $this->settingsManager->keyBegins($this->all($owner), $begins);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function findNameForValue($value, $begins = null, $owner = null)
+    {
+        $keys = array_keys($this->all($owner), $value, true);
+        return $this->settingsManager->keyBegins($keys, $begins, 'value');
+    }
+    
+    /*
+     * {@inheritdoc}
+     */
+    public function findOwnerForValue($value, $begins = null)
+    {
+        return $this->settingsManager->findOwnerForValue($value, $begins);
+    }
 }

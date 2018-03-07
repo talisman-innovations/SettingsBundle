@@ -336,7 +336,8 @@ class SettingsManager implements SettingsManagerInterface
     
     /**
      * Clear the local cache of settings to force rereading from the database
-     * {@inheritdoc}
+     * 
+     * @param SettingsOwnerInterface|null $owner
      */
     public function clearSettings($owner) {
         $this->globalSettings = null;
@@ -345,6 +346,91 @@ class SettingsManager implements SettingsManagerInterface
                 array_key_exists($owner->getSettingIdentifier(), $this->ownerSettings)) {
                     unset($this->ownerSettings[$owner->getSettingIdentifier()]);
                 }
+    }
+    
+    
+    /**
+     * Returns the array of key=>values matching name begins
+     * 
+     * @param string $begins
+     * @param SettingsOwnerInterface|null $owner
+     */
+    public function findNamesValuesBegin($begins, $owner = null) {
+
+        return $this->keyBegins($this->all($owner), $begins);
+    }
+
+    /*
+     * Returns the array of array keys matching value where the key begins with begins
+     * 
+     * @param mixed $value
+     * @param string $begins
+     * @param SettingsOwnerInterface|null $owner
+     * 
+     * @returns array
+     */
+    public function findNameForValue($value, $begins = null, $owner = null) {
+
+        $keys = array_keys($this->all($owner), $value, true);
+
+        return array_keys($this->keyBegins($keys, $begins));
+    }
+
+    /*
+     *  Returns array of owner Ids and setting name
+     *  for a setting whcih begins with and  matches the value
+     * 
+     * @param mixed $value
+     * @param string $begins
+     * 
+     * @returns array
+     */
+
+    public function findOwnerForValue($value, $begins = null) {
+
+        $qb = $this->em->createQueryBuilder();
+        $qb->select('s')
+                ->from('Dmishh\SettingsBundle\Entity\Setting', 's')
+                ->where('s.value = :value')
+                ->andWhere('s.name like :begins')
+                ->setParameter('value', $this->serializer->serialize($value))
+                ->setParameter('begins', $begins.'%');
+
+        $query = $qb->getQuery();
+        
+        $owners = [];
+        foreach ($query->getResult() as $setting) {
+            $owners[$setting->getOwnerId()] = $setting->getName();
+        }
+        return $owners;
+    }
+
+    /*
+     * Looks for keys that begin with a string and returns key => value
+     * 
+     * @param array $array
+     * @param string $begins
+     * @param mixed $value
+     * 
+     * @returns array
+     */
+
+    public function keyBegins($array, $begins, $value = null) {
+
+        if ($begins === null) {
+            return $array;
+        }
+
+        $callback = function($key) use ($begins) {
+            if (strpos($key, $begins) !== false) {
+                return $key;
+            }
+        };
+
+        # Allow filtering by either Value OR Key
+        $keyValue = ($value)?null:ARRAY_FILTER_USE_KEY;
+        
+        return array_filter($array, $callback, $keyValue);
     }
 
 }
