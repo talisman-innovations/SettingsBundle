@@ -342,7 +342,9 @@ class SettingsManager implements SettingsManagerInterface
     public function clearSettings($owner) {
         $this->globalSettings = null;
 
-        if ($owner !== null && $this->ownerSettings !== null &&
+        if ($owner !== null && 
+                $this->ownerSettings !== null && 
+                $owner->getSettingIdentifier() != null &&
                 array_key_exists($owner->getSettingIdentifier(), $this->ownerSettings)) {
                     unset($this->ownerSettings[$owner->getSettingIdentifier()]);
                 }
