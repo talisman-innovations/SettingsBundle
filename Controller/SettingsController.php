@@ -11,11 +11,14 @@ namespace Dmishh\SettingsBundle\Controller;
 
 use Dmishh\SettingsBundle\Entity\SettingsOwnerInterface;
 use Dmishh\SettingsBundle\Form\Type\SettingsType;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Core\SecurityContextInterface;
+use use Symfony\Contracts\Translation\TranslatorInterface;
 
-class SettingsController extends Controller
+class SettingsController extends AbstractController
 {
     /**
      * @param Request $request
@@ -24,15 +27,15 @@ class SettingsController extends Controller
      *
      * @throws \Symfony\Component\Security\Core\Exception\AccessDeniedException
      */
-    public function manageGlobalAction(Request $request)
+    public function manageGlobalAction(Request $request, AuthorizationCheckerInterface $authorizationChecker, TranslatorInterface $translator)
     {
         $securitySettings = $this->container->getParameter('settings_manager.security');
 
         if (!empty($securitySettings['manage_global_settings_role']) &&
-            !$this->getAuthorizationChecker()->isGranted($securitySettings['manage_global_settings_role'])
+            !$authorizationChecker->isGranted($securitySettings['manage_global_settings_role'])
         ) {
             throw new AccessDeniedException(
-                $this->container->get('translator')->trans(
+                $translator->trans(
                     'not_allowed_to_edit_global_settings',
                     array(),
                     'settings'
@@ -50,13 +53,11 @@ class SettingsController extends Controller
      *
      * @throws \Symfony\Component\Security\Core\Exception\AccessDeniedException
      */
-    public function manageOwnAction(Request $request)
+    public function manageOwnAction(Request $request, SecurityContextInterface $securityContext, TranslatorInterface $translator)
     {
-        $securityContext = $this->getSecurityContext();
-
         if (!$securityContext->getToken()) {
             throw new AccessDeniedException(
-                $this->get('translator')->trans(
+                $translator->trans(
                     'must_be_logged_in_to_edit_own_settings',
                     array(),
                     'settings'
@@ -67,7 +68,7 @@ class SettingsController extends Controller
         $securitySettings = $this->container->getParameter('settings_manager.security');
         if (!$securitySettings['users_can_manage_own_settings']) {
             throw new AccessDeniedException(
-                $this->get('translator')->trans(
+                $translator->trans(
                     'not_allowed_to_edit_own_settings',
                     array(),
                     'settings'
@@ -115,39 +116,5 @@ class SettingsController extends Controller
                 'settings_form' => $form->createView(),
             )
         );
-    }
-
-    /**
-     * Get AuthorizationChecker service.
-     *
-     * @return \Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface|\Symfony\Component\Security\Core\SecurityContextInterface
-     */
-    private function getAuthorizationChecker()
-    {
-        // SF 2.6+
-        // http://symfony.com/blog/new-in-symfony-2-6-security-component-improvements
-        if ($this->has('security.authorization_checker')) {
-            return $this->get('security.authorization_checker');
-        }
-
-        // SF < 2.6
-        return $this->get('security.context');
-    }
-
-    /**
-     * Get SecurityContext service.
-     *
-     * @return \Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface|\Symfony\Component\Security\Core\SecurityContextInterface
-     */
-    private function getSecurityContext()
-    {
-        // SF 2.6+
-        // http://symfony.com/blog/new-in-symfony-2-6-security-component-improvements
-        if ($this->has('security.token_storage')) {
-            return $this->get('security.token_storage');
-        }
-
-        // SF < 2.6
-        return $this->get('security.context');
     }
 }
